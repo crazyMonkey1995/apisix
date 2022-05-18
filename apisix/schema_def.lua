@@ -406,8 +406,17 @@ local upstream_schema = {
             properties = {
                 client_cert = certificate_scheme,
                 client_key = private_key_schema,
+                verify = {
+                    type = "boolean",
+                    description = "Turn on server certificate verification, "..
+                        "currently only kafka upstream is supported",
+                    default = false,
+                },
             },
-            required = {"client_cert", "client_key"},
+            dependencies = {
+                client_cert = {"client_key"},
+                client_key = {"client_cert"},
+            }
         },
         keepalive_pool = {
             type = "object",
@@ -451,10 +460,12 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp"},
+            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
+                "kafka"},
             description = "The scheme of the upstream." ..
                 " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
-                " For L4 proxy, it can be one of tcp/tls/udp."
+                " For L4 proxy, it can be one of tcp/tls/udp." ..
+                " For specific protocols, it can be kafka."
         },
         labels = labels_def,
         discovery_type = {
