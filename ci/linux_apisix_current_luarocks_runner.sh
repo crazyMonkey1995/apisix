@@ -19,6 +19,8 @@
 . ./ci/common.sh
 
 do_install() {
+    linux_get_dependencies
+
     export_or_prefix
 
     ./utils/linux-install-openresty.sh
@@ -58,7 +60,7 @@ script() {
     cd ..
 
     # apisix cli test
-    ./utils/set-dns.sh
+    set_coredns
 
     # install test dependencies
     sudo pip install requests
