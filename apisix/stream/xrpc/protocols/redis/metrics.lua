@@ -14,45 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local exporter = require("apisix.plugins.prometheus.exporter")
-
-
-local plugin_name = "prometheus"
-local schema = {
-    type = "object",
-    properties = {
-        prefer_name = {
-            type = "boolean",
-            default = false
-        }
+local _M = {
+    commands_total = {
+        type = "counter",
+        help = "Total number of requests for a specific Redis command",
+        labels = {"route", "command"},
+    },
+    commands_latency_seconds = {
+        type = "histogram",
+        help = "Latency of requests for a specific Redis command",
+        labels = {"route", "command"},
+        -- latency buckets, 1ms to 1s:
+        buckets = {0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1}
     },
 }
-
-
-local _M = {
-    version = 0.2,
-    priority = 500,
-    name = plugin_name,
-    log  = exporter.http_log,
-    schema = schema,
-    run_policy = "prefer_route",
-}
-
-
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
-end
-
-
-function _M.api()
-    return exporter.get_api(true)
-end
 
 
 return _M

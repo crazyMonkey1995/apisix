@@ -14,44 +14,36 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
-local exporter = require("apisix.plugins.prometheus.exporter")
+local pairs = pairs
+local pcall = pcall
 
 
-local plugin_name = "prometheus"
-local schema = {
-    type = "object",
-    properties = {
-        prefer_name = {
-            type = "boolean",
-            default = false
-        }
-    },
-}
+local _M = {}
+local hubs = {}
 
 
-local _M = {
-    version = 0.2,
-    priority = 500,
-    name = plugin_name,
-    log  = exporter.http_log,
-    schema = schema,
-    run_policy = "prefer_route",
-}
-
-
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+function _M.store(prometheus, name)
+    local ok, m = pcall(require, "apisix.stream.xrpc.protocols." .. name .. ".metrics")
     if not ok then
-        return false, err
+        core.log.notice("no metric for protocol ", name)
+        return
     end
 
-    return true
+    local hub = {}
+    for metric, conf in pairs(m) do
+        core.log.notice("register metric ", metric, " for protocol ", name)
+        hub[metric] = prometheus[conf.type](prometheus, name .. '_' .. metric,
+                                            conf.help, conf.labels, conf.buckets)
+    end
+
+    hubs[name] = hub
 end
 
 
-function _M.api()
-    return exporter.get_api(true)
+function _M.load(name)
+    return hubs[name]
 end
 
 
