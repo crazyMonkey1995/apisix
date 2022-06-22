@@ -7,7 +7,8 @@
       "items": [
         "architecture-design/apisix",
         "architecture-design/plugin-config",
-        "architecture-design/debug-mode"
+        "architecture-design/debug-mode",
+        "architecture-design/deployment-role"
       ]
     },
     {
@@ -189,6 +190,16 @@
         {
           "type": "doc",
           "id": "control-api"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "building-apisix"
         }
       ]
     },
