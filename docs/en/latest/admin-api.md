@@ -103,7 +103,7 @@ Example configuration:
         "send": 3,
         "read": 3
     },
-    "filter_func": "",                    # User-defined filtering function
+    "filter_func": ""                     # User-defined filtering function
 }
 ```
 
@@ -458,7 +458,7 @@ Example Configuration:
 {
     "plugins": {},          # Bound plugin
     "username": "name",     # Consumer name
-    "desc": "hello world",  # Consumer desc
+    "desc": "hello world"   # Consumer desc
 }
 ```
 
@@ -565,7 +565,7 @@ The following should be considered when setting the `hash_on` value:
 - When set to `vars_combinations`, the `key` is required. The value of the key can be a combination of any of the [Nginx variables](http://nginx.org/en/docs/varindex.html) like `$request_uri$remote_addr`.
 - When no value is set for either `hash_on` or `key`, the key defaults to `remote_addr`.
 
-The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment?):
+The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment):
 
 You can set the `scheme` to `tls`, which means "TLS over TCP".
 
@@ -584,7 +584,7 @@ Example Configuration:
     "timeout": {                # Set the timeout for connecting, sending and receiving messages, each is 15 seconds.
         "connect":15,
         "send":15,
-        "read":15,
+        "read":15
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
                                 # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
@@ -594,7 +594,7 @@ Example Configuration:
     "key": "",
     "name": "upstream-for-test",
     "desc": "hello world",
-    "scheme": "http",           # The scheme used when communicating with upstream, the default is `http`
+    "scheme": "http"            # The scheme used when communicating with upstream, the default is `http`
 }
 ```
 

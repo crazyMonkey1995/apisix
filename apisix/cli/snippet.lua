@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local template = require("resty.template")
+local pl_path = require("pl.path")
 local ipairs = ipairs
 
 
@@ -46,36 +47,71 @@ function _M.generate_conf_server(env, conf)
         if not to then
             return nil, "bad etcd endpoint format"
         end
-        servers[i] = s:sub(to + 1)
     end
 
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
-        {% for _, addr in ipairs(servers) do %}
-        server {* addr *};
-        {% end %}
+        server 0.0.0.0:80;
+        balancer_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.balancer()
+        }
     }
     server {
         listen unix:{* home *}/conf/config_listen.sock;
         access_log off;
+
+        set $upstream_host '';
+
+        access_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.access()
+        }
+
         location / {
             {% if enable_https then %}
             proxy_pass https://apisix_conf_backend;
             proxy_ssl_server_name on;
+            {% if sni then %}
+            proxy_ssl_name {* sni *};
+            {% else %}
+            proxy_ssl_name $upstream_host;
+            {% end %}
             proxy_ssl_protocols TLSv1.2 TLSv1.3;
+            {% if client_cert then %}
+            proxy_ssl_certificate {* client_cert *};
+            proxy_ssl_certificate_key {* client_cert_key *};
+            {% end %}
             {% else %}
             proxy_pass http://apisix_conf_backend;
             {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Connection "";
+            proxy_set_header Host $upstream_host;
+        }
+
+        log_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.log()
         }
     }
     ]])
+
+    local tls = etcd.tls
+    local client_cert
+    local client_cert_key
+    if tls and tls.cert then
+        client_cert = pl_path.abspath(tls.cert)
+        client_cert_key = pl_path.abspath(tls.key)
+    end
+
     return conf_render({
-        servers = servers,
+        sni = etcd.tls and etcd.tls.sni,
         enable_https = enable_https,
         home = env.apisix_home or ".",
+        client_cert = client_cert,
+        client_cert_key = client_cert_key,
     })
 end
 

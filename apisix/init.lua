@@ -27,6 +27,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
+local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local script          = require("apisix.script")
@@ -95,6 +96,7 @@ function _M.http_init(args)
     end
 
     xrpc.init()
+    conf_server.init()
 end
 
 
@@ -445,9 +447,10 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
+                local phase = "rewrite_in_consumer"
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
                 -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
+                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)

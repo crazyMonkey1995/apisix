@@ -110,7 +110,7 @@ route 对象 json 配置内容：
         "send": 3,
         "read": 3
     },
-    "filter_func": "",                    # 用户自定义的过滤函数，非必填
+    "filter_func": ""                     # 用户自定义的过滤函数，非必填
 }
 ```
 
@@ -467,7 +467,7 @@ consumer 对象 json 配置内容：
 {
     "plugins": {},          # 指定 consumer 绑定的插件
     "username": "name",     # 必填
-    "desc": "hello world",  # consumer 描述
+    "desc": "hello world"   # consumer 描述
 }
 ```
 
@@ -583,7 +583,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)。
+这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
 
 **upstream 对象 json 配置内容：**
 
@@ -594,7 +594,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
     "timeout": {                # 设置连接、发送消息、接收消息的超时时间，每项都为 15 秒
         "connect":15,
         "send":15,
-        "read":15,
+        "read":15
     },
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + 端口`
                                 # 等价于 "nodes": [ {"host":"host", "port":80, "weight": 100} ],
