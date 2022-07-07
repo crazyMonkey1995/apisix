@@ -137,7 +137,7 @@ foo
     local old_f = resolver.parse_domain
     local counter = 0
     resolver.parse_domain = function (domain)
-        if domain == "x.com" then
+        if domain == "localhost" then
             counter = counter + 1
             if counter % 2 == 0 then
                 return "127.0.0.2"
@@ -165,12 +165,14 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
-            - http://x.com:2379
+            # use localhost so the connection is OK in the situation that the DNS
+            # resolve is not done in APISIX
+            - http://localhost:2379
 --- response_body
 foo
 --- error_log
-x.com is resolved to: 127.0.0.3
-x.com is resolved to: 127.0.0.2
+localhost is resolved to: 127.0.0.3
+localhost is resolved to: 127.0.0.2
 --- no_error_log
 [error]
 
@@ -302,7 +304,10 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
+            - https://127.0.0.1:12379
             - https://localhost:12345
+        tls:
+            verify: false
 --- error_log
 Receive SNI: localhost
 --- no_error_log
@@ -345,8 +350,10 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
+            - https://127.0.0.1:12379
             - https://127.0.0.1:12345
         tls:
+            verify: false
             sni: "x.com"
 --- error_log
 Receive SNI: x.com

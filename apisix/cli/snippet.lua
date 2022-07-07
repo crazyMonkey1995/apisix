@@ -24,7 +24,10 @@ local _M = {}
 
 
 function _M.generate_conf_server(env, conf)
-    if not (conf.deployment and conf.deployment.role == "traditional") then
+    if not (conf.deployment and (
+        conf.deployment.role == "traditional" or
+        conf.deployment.role == "control_plane"))
+    then
         return nil, nil
     end
 
@@ -49,6 +52,24 @@ function _M.generate_conf_server(env, conf)
         end
     end
 
+    local control_plane
+    if conf.deployment.role == "control_plane" then
+        control_plane = conf.deployment.role_control_plane.conf_server
+        control_plane.cert = pl_path.abspath(control_plane.cert)
+        control_plane.cert_key = pl_path.abspath(control_plane.cert_key)
+
+        if control_plane.client_ca_cert then
+            control_plane.client_ca_cert = pl_path.abspath(control_plane.client_ca_cert)
+        end
+    end
+
+    local trusted_ca_cert
+    if conf.deployment.certs then
+        if conf.deployment.certs.trusted_ca_cert then
+            trusted_ca_cert = pl_path.abspath(conf.deployment.certs.trusted_ca_cert)
+        end
+    end
+
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
         server 0.0.0.0:80;
@@ -57,8 +78,26 @@ function _M.generate_conf_server(env, conf)
             conf_server.balancer()
         }
     }
+
+    {% if trusted_ca_cert then %}
+    lua_ssl_trusted_certificate {* trusted_ca_cert *};
+    {% end %}
+
     server {
+        {% if control_plane then %}
+        listen {* control_plane.listen *} ssl;
+        ssl_certificate {* control_plane.cert *};
+        ssl_certificate_key {* control_plane.cert_key *};
+
+        {% if control_plane.client_ca_cert then %}
+        ssl_verify_client on;
+        ssl_client_certificate {* control_plane.client_ca_cert *};
+        {% end %}
+
+        {% else %}
         listen unix:{* home *}/conf/config_listen.sock;
+        {% end %}
+
         access_log off;
 
         set $upstream_host '';
@@ -71,17 +110,20 @@ function _M.generate_conf_server(env, conf)
         location / {
             {% if enable_https then %}
             proxy_pass https://apisix_conf_backend;
+            proxy_ssl_protocols TLSv1.2 TLSv1.3;
             proxy_ssl_server_name on;
+
             {% if sni then %}
             proxy_ssl_name {* sni *};
             {% else %}
             proxy_ssl_name $upstream_host;
             {% end %}
-            proxy_ssl_protocols TLSv1.2 TLSv1.3;
+
             {% if client_cert then %}
             proxy_ssl_certificate {* client_cert *};
             proxy_ssl_certificate_key {* client_cert_key *};
             {% end %}
+
             {% else %}
             proxy_pass http://apisix_conf_backend;
             {% end %}
@@ -89,6 +131,7 @@ function _M.generate_conf_server(env, conf)
             proxy_http_version 1.1;
             proxy_set_header Connection "";
             proxy_set_header Host $upstream_host;
+            proxy_next_upstream error timeout non_idempotent http_500 http_502 http_503 http_504;
         }
 
         log_by_lua_block {
@@ -107,11 +150,13 @@ function _M.generate_conf_server(env, conf)
     end
 
     return conf_render({
-        sni = etcd.tls and etcd.tls.sni,
-        enable_https = enable_https,
+        sni = tls and tls.sni,
         home = env.apisix_home or ".",
+        control_plane = control_plane,
+        enable_https = enable_https,
         client_cert = client_cert,
         client_cert_key = client_cert_key,
+        trusted_ca_cert = trusted_ca_cert,
     })
 end
 
